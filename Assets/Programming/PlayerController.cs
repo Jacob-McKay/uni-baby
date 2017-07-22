@@ -4,11 +4,19 @@ using UnityEngine;
 using UnityStandardAssets.CrossPlatformInput;
 
 public class PlayerController : MonoBehaviour {
+    public GameObject unicycleTire;
     public GameObject gameObjectToApplyLeanForceTo;
     public float leftToRightLeanForceMultiplier = 1f;
     public float backToForwardLeanForceMultiplier = 1f;
     public float constantUpwardForce = 1f;
     public float secondsToWaitForTiltInput = .5f;
+
+    // ints would probably be faster than all this floating point arithmetic i'm doin
+    public float _pedalSpeed = 1f;
+    public float _accelerationIncrement = 1f;
+
+    private float pedalPositionAngleInDegrees = 0f;
+    private float pedalAnimtionPercentage = 1f;
 
     private Rigidbody _rigidbody;
 
@@ -19,6 +27,11 @@ public class PlayerController : MonoBehaviour {
     void Start () {
         StartCoroutine(CalibrateTiltInput(secondsToWaitForTiltInput));
         _rigidbody = GetComponent<Rigidbody>();
+    }
+
+    void Update()
+    {
+        
     }
 
     void FixedUpdate () {
@@ -34,6 +47,19 @@ public class PlayerController : MonoBehaviour {
             var leanForce = new Vector3(0, constantUpwardForce, 0);
             _rigidbody.AddForceAtPosition(leanForce, gameObjectToApplyLeanForceTo.transform.position);
         }
+
+        unicycleTire.transform.Rotate(Vector3.up, _pedalSpeed);
+        _rigidbody.AddForceAtPosition(Vector3.forward * _pedalSpeed, unicycleTire.transform.position);
+    }
+
+    void OnAccelerate()
+    {
+        _pedalSpeed += _accelerationIncrement;
+    }
+
+    void OnDecelerate()
+    {
+        _pedalSpeed -= _accelerationIncrement;
     }
 
     IEnumerator CalibrateTiltInput(float secondsToWait)
