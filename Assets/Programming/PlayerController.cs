@@ -6,8 +6,11 @@ using UnityStandardAssets.CrossPlatformInput;
 public class PlayerController : MonoBehaviour {
     public GameObject unicycleTire;
     public GameObject gameObjectToApplyLeanForceTo;
+    public GameObject gameObjectToApplyConstantUpwardForceTo;
+
     public float leftToRightLeanForceMultiplier = 1f;
     public float backToForwardLeanForceMultiplier = 1f;
+    public float wheelTorqueMultiplier = 1f;
     public float constantUpwardForce = 1f;
     public float secondsToWaitForTiltInput = .5f;
 
@@ -23,10 +26,13 @@ public class PlayerController : MonoBehaviour {
     private float _startForwardTilt = 0f;
     private bool _tiltIsCalibrated = false;
 
+    private WheelCollider _wheelCollider;
+
     // Use this for initialization
     void Start () {
         StartCoroutine(CalibrateTiltInput(secondsToWaitForTiltInput));
         _rigidbody = GetComponent<Rigidbody>();
+        _wheelCollider = GetComponentInChildren<WheelCollider>();
     }
 
     void Update()
@@ -40,24 +46,22 @@ public class PlayerController : MonoBehaviour {
             var leftToRightLean = CrossPlatformInputManager.GetAxis("Horizontal");
             var backToForwardLean = (CrossPlatformInputManager.GetAxis("Vertical") - _startForwardTilt);
 
-            var leanForce = new Vector3(leftToRightLean * leftToRightLeanForceMultiplier, constantUpwardForce, backToForwardLean * backToForwardLeanForceMultiplier);
-            _rigidbody.AddForceAtPosition(leanForce, gameObjectToApplyLeanForceTo.transform.position);
-        } else
-        {
-            var leanForce = new Vector3(0, constantUpwardForce, 0);
+            var leanForce = new Vector3(leftToRightLean * leftToRightLeanForceMultiplier, 0, backToForwardLean * backToForwardLeanForceMultiplier);
             _rigidbody.AddForceAtPosition(leanForce, gameObjectToApplyLeanForceTo.transform.position);
         }
 
+        _rigidbody.AddForceAtPosition(Vector3.up * constantUpwardForce, gameObjectToApplyConstantUpwardForceTo.transform.position);
+
         unicycleTire.transform.Rotate(Vector3.up, _pedalSpeed);
-        _rigidbody.AddForceAtPosition(Vector3.forward * _pedalSpeed, unicycleTire.transform.position);
+        _wheelCollider.motorTorque = _pedalSpeed * wheelTorqueMultiplier;
     }
 
-    void OnAccelerate()
+    public void OnAccelerate()
     {
         _pedalSpeed += _accelerationIncrement;
     }
 
-    void OnDecelerate()
+    public void OnDecelerate()
     {
         _pedalSpeed -= _accelerationIncrement;
     }
